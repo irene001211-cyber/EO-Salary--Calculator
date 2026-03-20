@@ -35,7 +35,7 @@ const salaryTable = {
 
 const departments = ["企业培训业务部", "基础教育业务部", "高教业务部"];
 const grades = Object.keys(salaryTable);
-const ratings = ["未提供", "A档", "S档", "SS档"];
+const ratings = ["未提供", "CR值 100%", "CR值 100%～110%", "CR值 110%～120%"];
 const modes = ["按职级算薪资", "按薪资反推职级"];
 const cityOptions = [
   "北京",
@@ -90,17 +90,17 @@ function getApproval(cr) {
 
 function getRatingMatch(rating, cr) {
   if (!rating || rating === "未提供") return "未提供";
-  if (rating === "A档") {
+  if (rating === "CR值 100%") {
     if (cr === 100) return "合理";
-    return cr > 100 ? "偏高（已超过A档合理范围）" : "偏低（低于A档标准建议）";
+    return cr > 100 ? "偏高（已超过 CR值 100% 合理范围）" : "偏低（低于 CR值 100% 标准建议）";
   }
-  if (rating === "S档") {
+  if (rating === "CR值 100%～110%") {
     if (cr >= 100 && cr <= 110) return "合理";
-    return cr > 110 ? "偏高（已超过S档合理范围）" : "偏低（未体现S档价值）";
+    return cr > 110 ? "偏高（已超过 CR值 100%～110% 合理范围）" : "偏低（未体现 CR值 100%～110% 区间）";
   }
-  if (rating === "SS档") {
+  if (rating === "CR值 110%～120%") {
     if (cr >= 110 && cr <= 120) return "合理";
-    return cr > 120 ? "偏高（已超过SS档合理范围）" : "偏低（未体现SS档价值）";
+    return cr > 120 ? "偏高（已超过 CR值 110%～120% 合理范围）" : "偏低（未体现 CR值 110%～120% 区间）";
   }
   return "未提供";
 }
@@ -207,7 +207,7 @@ ${approval}
 ${ratingMatch}
 
 说明：
-标准月薪为${standardSalary}，本次拟给月薪为${monthly}，候选人评级为${rating}。${notes ? `\n备注：${notes}` : ""}`;
+标准月薪为${standardSalary}，本次拟给月薪为${monthly}，CR区间为${rating}。${notes ? `\n备注：${notes}` : ""}`;
 
       return {
         level,
@@ -273,7 +273,7 @@ ${ratingMatch}
 ${judgement}
 
 说明：
-按${actualCity}${level}城市等级测算，最接近的标准职级为${best.g}，标准月薪为${best.standardSalary}，本次拟给月薪为${monthly}，候选人评级为${rating}。${notes ? `\n备注：${notes}` : ""}`;
+按${actualCity}${level}城市等级测算，最接近的标准职级为${best.g}，标准月薪为${best.standardSalary}，本次拟给月薪为${monthly}，CR区间为${rating}。${notes ? `\n备注：${notes}` : ""}`;
 
     return {
       level,
@@ -447,7 +447,7 @@ ${judgement}
               </div>
 
               <div>
-                <label style={fieldLabelStyle}>候选人评级</label>
+                <label style={fieldLabelStyle}>CR区间</label>
                 <select value={rating} onChange={(e) => setRating(e.target.value)} style={fieldStyle}>
                   {ratings.map((item) => (
                     <option key={item} value={item}>
