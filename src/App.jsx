@@ -165,6 +165,7 @@ export default function App() {
   const [grade, setGrade] = useState("E5-4");
   const [rating, setRating] = useState("未提供");
   const [offeredSalary, setOfferedSalary] = useState("");
+  const [currentSalary, setCurrentSalary] = useState("");
   const [notes, setNotes] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -195,10 +196,13 @@ export default function App() {
       const ratingMatch = getRatingMatch(rating, cr);
       const annual = formatAnnual(monthly);
 
+      const current = currentSalary ? Number(currentSalary) : null;
+      const raisePercent = current && current > 0 ? Math.round(((monthly - current) / current) * 100) : null;
+
       const output = `${department}${actualCity}薪资初步建议：
 
 职级：
-${grade}：${monthly}（${baseSalary}底薪+${perfSalary}绩效）*12+提成=${annual}w/年+提成   CR值${cr}%
+${grade}：${monthly}（${baseSalary}底薪+${perfSalary}绩效）*12+提成=${annual}w/年+提成   CR值${cr}%${raisePercent !== null ? `   涨幅${raisePercent}%（目前${current}）` : ""}
 
 审批建议：
 ${approval}
@@ -207,7 +211,7 @@ ${approval}
 ${ratingMatch}
 
 说明：
-标准月薪为${standardSalary}，本次拟给月薪为${monthly}，CR区间为${rating}。${notes ? `\n备注：${notes}` : ""}`;
+标准月薪为${standardSalary}，本次拟给月薪为${monthly}，CR区间为${rating}。${raisePercent !== null ? `\n目前薪资为${current}，涨幅为${raisePercent}%。` : ""}${notes ? `\n备注：${notes}` : ""}`;
 
       return {
         level,
@@ -221,6 +225,7 @@ ${ratingMatch}
         annual,
         approval,
         ratingMatch,
+        raisePercent,
         output,
       };
     }
@@ -251,6 +256,9 @@ ${ratingMatch}
     const ratingMatch = getRatingMatch(rating, best.cr);
     const annual = formatAnnual(monthly);
 
+    const current = currentSalary ? Number(currentSalary) : null;
+    const raisePercent = current && current > 0 ? Math.round(((monthly - current) / current) * 100) : null;
+
     let judgement = "落在合理范围内，建议按该职级发放。";
     if (best.cr < 95) judgement = "拟给月薪明显低于该职级标准位，建议谨慎确认是否定级偏高。";
     if (best.cr > 110) judgement = "拟给月薪明显高于该职级标准位，建议结合候选人能力确认是否需要上调职级或走特批。";
@@ -261,7 +269,7 @@ ${ratingMatch}
 ${best.g}
 
 薪资建议：
-${best.g}：${monthly}（${baseSalary}底薪+${perfSalary}绩效）*12+提成=${annual}w/年+提成   CR值${best.cr}%
+${best.g}：${monthly}（${baseSalary}底薪+${perfSalary}绩效）*12+提成=${annual}w/年+提成   CR值${best.cr}%${raisePercent !== null ? `   涨幅${raisePercent}%（目前${current}）` : ""}
 
 审批建议：
 ${approval}
@@ -273,7 +281,7 @@ ${ratingMatch}
 ${judgement}
 
 说明：
-按${actualCity}${level}城市等级测算，最接近的标准职级为${best.g}，标准月薪为${best.standardSalary}，本次拟给月薪为${monthly}，CR区间为${rating}。${notes ? `\n备注：${notes}` : ""}`;
+按${actualCity}${level}城市等级测算，最接近的标准职级为${best.g}，标准月薪为${best.standardSalary}，本次拟给月薪为${monthly}，CR区间为${rating}。${raisePercent !== null ? `\n目前薪资为${current}，涨幅为${raisePercent}%。` : ""}${notes ? `\n备注：${notes}` : ""}`;
 
     return {
       level,
@@ -287,10 +295,11 @@ ${judgement}
       annual,
       approval,
       ratingMatch,
+      raisePercent,
       judgement,
       output,
     };
-  }, [mode, department, actualCity, manualLevel, grade, rating, offeredSalary, notes]);
+  }, [mode, department, actualCity, manualLevel, grade, rating, offeredSalary, currentSalary, notes]);
 
   const copyOutput = async () => {
     if (!result?.output) return;
@@ -458,17 +467,29 @@ ${judgement}
               </div>
             </div>
 
-            <div>
-              <label style={fieldLabelStyle}>
-                {mode === "按职级算薪资" ? "拟给月薪（可不填，默认按标准月薪）" : "拟给月薪（必填，用于反推职级）"}
-              </label>
-              <input
-                type="number"
-                value={offeredSalary}
-                onChange={(e) => setOfferedSalary(e.target.value)}
-                placeholder="例如：15000"
-                style={fieldStyle}
-              />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div>
+                <label style={fieldLabelStyle}>
+                  {mode === "按职级算薪资" ? "拟给月薪（可不填，默认按标准月薪）" : "拟给月薪（必填，用于反推职级）"}
+                </label>
+                <input
+                  type="number"
+                  value={offeredSalary}
+                  onChange={(e) => setOfferedSalary(e.target.value)}
+                  placeholder="例如：15000"
+                  style={fieldStyle}
+                />
+              </div>
+              <div>
+                <label style={fieldLabelStyle}>目前薪资（可选，用于计算涨幅）</label>
+                <input
+                  type="number"
+                  value={currentSalary}
+                  onChange={(e) => setCurrentSalary(e.target.value)}
+                  placeholder="例如：12000"
+                  style={fieldStyle}
+                />
+              </div>
             </div>
 
             <div>
@@ -512,6 +533,9 @@ ${judgement}
                 <MetricCard label="CR值" value={`${result.cr}%`} />
                 <MetricCard label="底薪 / 绩效" value={`${result.baseSalary} / ${result.perfSalary}`} />
                 <MetricCard label="审批建议" value={result.approval} />
+                {result.raisePercent !== null && result.raisePercent !== undefined && (
+                  <MetricCard label="涨幅比例" value={`${result.raisePercent}%`} />
+                )}
 
                 <div
                   style={{
